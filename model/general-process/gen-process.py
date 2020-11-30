@@ -13,10 +13,6 @@ from sagemaker import get_execution_role
 
 # ## Script
 session = sagemaker.Session()
-session.upload_data(path='docker_preprocess/preprocess.R', 
-                    bucket='sagemaker-ap-southeast-1-361503357449', 
-                    key_prefix='R-Processing-Script')
-
 
 # configurable variables
 account_id = boto3.client('sts').get_caller_identity().get('Account')
@@ -41,9 +37,6 @@ image_uri = processing_repository_uri
 processing_instance_type = 'ml.t3.medium'
 processing_job_name = "R-Processing-General-{}".format(strftime("%y-%m-%d-%H-%M-%S", gmtime()))
 script_name = 's3://sagemaker-ap-southeast-1-361503357449/R-Processing-Script/preprocess.R' # use s3 uri to prevent multiple uploads and folder creations to S3
-
-
-# In[10]:
 
 
 from sagemaker.processing import ScriptProcessor, ProcessingInput, ProcessingOutput
