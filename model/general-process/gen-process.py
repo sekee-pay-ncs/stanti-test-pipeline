@@ -8,7 +8,7 @@
 # 3. [Run Preprocessing job](#Run)
 
 import os
-import argparser
+import argparse
 import sys
 import boto3
 import sagemaker
