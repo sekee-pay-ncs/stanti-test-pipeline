@@ -189,10 +189,10 @@ Resources:
       KmsKeyId: !Ref KMSKey
       RoleArn: !GetAtt SageMakerRole.Arn
 
-  BuildProject:
+  BuildProjectGeneral:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Sub ${ModelName}-build
+      Name: !Sub ${ModelName}-general-build
       Description: Builds the assets required for executing the rest of pipeline
       ServiceRole: !GetAtt SageMakerRole.Arn
       Artifacts:
@@ -203,7 +203,24 @@ Resources:
         Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
       Source:
         Type: CODEPIPELINE
-        BuildSpec: model/buildspec.yml
+        BuildSpec: model/general-process/buildspec.yml
+      TimeoutInMinutes: 30
+
+  BuildProjectCountry:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${ModelName}-country-build
+      Description: Builds the assets required for executing the rest of pipeline
+      ServiceRole: !GetAtt SageMakerRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: model/country-process/buildspec.yml
       TimeoutInMinutes: 30
 
   # CreateExperiment:
@@ -319,7 +336,7 @@ Resources:
               RunOrder: 1
         - Name: Build
           Actions:
-            - Name: PackageModel
+            - Name: GeneralProcessing
               InputArtifacts:
                 - Name: ModelSourceOutput
                 - Name: DataSourceOutput
@@ -331,25 +348,41 @@ Resources:
                 Version: "1"
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref BuildProject
+                ProjectName: !Ref BuildProjectGeneral
                 PrimarySource: ModelSourceOutput
-                EnvironmentVariables: !Sub '[{"name":"DATA_BUCKET","value":"sagemaker-${AWS::Region}-${AWS::AccountId}","type":"PLAINTEXT"},{"name":"MODEL_NAME","value":"${ModelName}","type":"PLAINTEXT"},{"name":"ROLE_ARN","value":"${MLOpsRole.Arn}","type":"PLAINTEXT"},{"name":"ARTIFACT_BUCKET","value":"${ArtifactBucket}","type":"PLAINTEXT"},{"name":"KMS_KEY_ID","value":"${KMSKey}","type":"PLAINTEXT"}]'
+                # EnvironmentVariables: !Sub '[{"name":"DATA_BUCKET","value":"sagemaker-${AWS::Region}-${AWS::AccountId}","type":"PLAINTEXT"},{"name":"MODEL_NAME","value":"${ModelName}","type":"PLAINTEXT"},{"name":"ROLE_ARN","value":"${MLOpsRole.Arn}","type":"PLAINTEXT"},{"name":"ARTIFACT_BUCKET","value":"${ArtifactBucket}","type":"PLAINTEXT"},{"name":"KMS_KEY_ID","value":"${KMSKey}","type":"PLAINTEXT"}]'
               RunOrder: 1
-            - Name: SetupTraining
+            - Name: CountryProcessing
               InputArtifacts:
                 - Name: BuildOutput
+                - Name: DataSourceOutput
+                - Name: ModelSourceOutput
+              OutputArtifacts:
+                - Name: CountryProcessingOutput
               ActionTypeId:
-                Category: Deploy
+                Category: Build
                 Owner: AWS
                 Version: "1"
-                Provider: CloudFormation
+                Provider: CodeBuild
               Configuration:
-                ActionMode: REPLACE_ON_FAILURE
-                RoleArn: !GetAtt MLOpsRole.Arn
-                Capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
-                StackName: sagemaker-custom-resource # Use global name to re-use across templates
-                TemplatePath: BuildOutput::template-custom-resource.yml
+                ProjectName: !Ref BuildProjectCountry
+                PrimarySource: ModelSourceOutput
               RunOrder: 2
+            # - Name: SetupTraining
+              # InputArtifacts:
+                # - Name: BuildOutput
+              # ActionTypeId:
+                # Category: Deploy
+                # Owner: AWS
+                # Version: "1"
+                # Provider: CloudFormation
+              # Configuration:
+                # ActionMode: REPLACE_ON_FAILURE
+                # RoleArn: !GetAtt MLOpsRole.Arn
+                # Capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
+                # StackName: sagemaker-custom-resource # Use global name to re-use across templates
+                # TemplatePath: BuildOutput::template-custom-resource.yml
+              # RunOrder: 2
         # - Name: Train
           # Actions:
             # - Name: CreateExperiment
@@ -575,6 +608,7 @@ Resources:
               - "sts:AssumeRole"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/CloudWatchSyntheticsFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
       Policies:
         - PolicyName: "stanti-test-sagemaker-policy"
           PolicyDocument:
