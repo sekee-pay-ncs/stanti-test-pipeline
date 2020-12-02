@@ -61,7 +61,7 @@ def main(
 
     s3 = boto3.resource('s3')
     bucket = s3.Bucket("sagemaker-{}-{}".format(region, account_id))
-    bucket.objects.filter(prefix=processing_job_name).delete()
+    bucket.objects.filter(Prefix=processing_job_name+"/").delete()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Load parameters")
