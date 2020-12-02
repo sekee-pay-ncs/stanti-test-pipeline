@@ -60,7 +60,7 @@ def main(
     preprocessing_job_description = script_processor.jobs[-1].describe()
 
     s3 = boto3.resource('s3')
-    bucket = s3.Bucket("s3://sagemaker-{}-{}".format(region, account_id))
+    bucket = s3.Bucket("sagemaker-{}-{}".format(region, account_id))
     bucket.objects.filter(prefix=processing_job_name).delete()
 
 if __name__ == "__main__":
