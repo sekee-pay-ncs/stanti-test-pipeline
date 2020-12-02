@@ -38,14 +38,15 @@ def process_data(
     image_uri = processing_repository_uri
 
     s3_object = 'stanti-test-pipeline'
+    s3_object_data = 'DataFiles'
     s3_object_script = 'ProcessingScripts'
     s3_bucket = 'stanti-test-pipeline-artifact-ap-southeast-1-361503357449'
 
     processing_instance_type = 'ml.t3.medium'
     processing_job_name = "R-Processing-{}-{}".format(country_to_run.capitalize(), strftime("%y-%m-%d-%H-%M-%S", gmtime()))
 
-    output_destination = 's3://{}/{}/data/csv/{}'.format(s3_bucket, s3_object_data, country_to_run)
-    script_name = 's3://{}/{}/{}_preprocess.R'.format(s3_bucket, s3_object_script, country_to_run)
+    output_destination = 's3://{}/{}/{}/csv/{}'.format(s3_bucket, s3_object, s3_object_data, country_to_run)
+    script_name = 's3://{}/{}/{}/{}_preprocess.R'.format(s3_bucket, se_object, s3_object_script, country_to_run)
 
     # ## Create SageMaker Processing job
     script_processor = ScriptProcessor(command=['Rscript'],
