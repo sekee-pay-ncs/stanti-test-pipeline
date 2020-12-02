@@ -47,7 +47,7 @@ def process_data(
 
     input_uri = 's3://{}/{}/{}/raw/'.format(s3_bucket, s3_object, s3_object_data)
     output_destination = 's3://{}/{}/{}/csv/{}'.format(s3_bucket, s3_object, s3_object_data, country_to_run)
-    script_name = 's3://{}/{}/{}/{}_preprocess.R'.format(s3_bucket, se_object, s3_object_script, country_to_run)
+    script_name = 's3://{}/{}/{}/{}_preprocess.R'.format(s3_bucket, s3_object, s3_object_script, country_to_run)
 
     # ## Create SageMaker Processing job
     script_processor = ScriptProcessor(command=['Rscript'],
